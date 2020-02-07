@@ -8,7 +8,7 @@ class SessionsController < ApplicationController
     # 「ユーザーがデータベースにあり、かつ、認証に成功した場合にのみ」
       log_in @user
       params[:session][:remember_me] == '1' ? remember(@user): forget(@user)
-      redirect_to @user
+      redirect_back_or @user
     else
       flash.now[:danger] = 'invalid email/password combination'
       # flash.nowは次にリクエストが発生した時に消滅する。rails
