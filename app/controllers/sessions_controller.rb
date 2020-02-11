@@ -5,13 +5,19 @@ class SessionsController < ApplicationController
   def create
     @user = User.find_by(email:params[:session][:email].downcase)
     if @user && @user.authenticate(params[:session][:password])
-    # 「ユーザーがデータベースにあり、かつ、認証に成功した場合にのみ」
-      log_in @user
-      params[:session][:remember_me] == '1' ? remember(@user): forget(@user)
-      redirect_back_or @user
+      if @user.activated?
+        log_in @user
+        params[:session][:remember_me] == '1' ? remember(@user): forget(@user)
+        redirect_back_or @user
+      else
+        message = "Account not activated."
+        message += "Check your email for the activation link."
+        flash[:warning] = message
+        redirect_to root_url
+      end
     else
       flash.now[:danger] = 'invalid email/password combination'
-      # flash.nowは次にリクエストが発生した時に消滅する。rails
+      # flash.nowは次にリクエストが発生した時に消滅する。
       render 'new'
     end
   end
