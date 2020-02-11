@@ -73,7 +73,7 @@ Rails.application.configure do
     :port           => '587',
     :authentication => 'plain',
     :user_name      => ENV['SENDGRID_USERNAME'],
-    :password       => ENV['SENDGRID_USERPASSWORD'],
+    :password       => ENV['SENDGRID_PASSWORD'],
     :domain         => 'heroku.com',
     :enable_starttle_auto => true
   }
