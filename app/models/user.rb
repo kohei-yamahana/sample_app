@@ -1,6 +1,19 @@
 class User < ApplicationRecord
     has_many :microposts, dependent: :destroy
     # dependent(依存)で、userの削除はmicropostと連動する
+    has_many :active_relationships, class_name: "Relationship",#外部キーが<class>_idによって推測されるため。
+                                    foreign_key: "follower_id",#foreign_keyは外部キーの意。
+                                    dependent: :destroy
+    has_many :passive_relationships, class_name: "Relationship",
+                                     foreign_key: "followed_id",
+                                     dependent: :destroy
+    has_many :following, through: :active_relationships, source: :followed
+    #フォロー
+    # source: :followedはhas_many :followedsという表記がおかしいので、
+    # followingへと明示的に変更するために行っている。
+    has_many :followers, through: :passive_relationships, source: :follower
+    #フォロアー
+    # 今回source: :followerはいらなかったが、上記との類似性を強調するために書いた。
     attr_accessor :remember_token, :activation_token, :reset_token
     before_save   :downcase_email
     before_create :create_activation_digest
@@ -65,7 +78,24 @@ class User < ApplicationRecord
     end
     
     def feed
-        Micropost.where("user_id = ?", id)
+        following_ids = "SELECT followed_id FROM relationships 
+                         WHERE follower_id = :user_id"
+        Micropost.where("user_id IN (#{following_ids}) 
+                         OR user_id = :user_id", user_id: id)
+        # user_id IN (?)でユーザーをフォローしている人を検索、
+        # user_id = ? で ユーザー自身を取得。
+    end
+    
+    def follow(other_user)
+        following << other_user
+    end
+    
+    def unfollow(other_user)
+        active_relationships.find_by(followed_id: other_user.id).destroy
+    end
+    
+    def following?(other_user)
+        following.include?(other_user)
     end
     
     private
